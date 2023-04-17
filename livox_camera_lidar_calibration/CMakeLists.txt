@@ -18,8 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
 )
 
-find_package(PCL REQUIRED)
-find_package(OpenCV)
+find_package(PCL 1.8 REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 find_package(Threads)
 find_package(Ceres REQUIRED)
 
@@ -45,6 +45,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  "/usr/local/include/pcl-1.8/"
 )
 
 add_executable(cameraCalib src/cameraCalib.cpp)
@@ -58,17 +59,17 @@ target_link_libraries(cornerPhoto ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 
 add_executable(getExt1 src/cam_lid_external1.cpp src/common.h)
-target_link_libraries(getExt1 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES})
+target_link_libraries(getExt1 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(getExt2 src/cam_lid_external2.cpp src/common.h)
-target_link_libraries(getExt2 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES})
+target_link_libraries(getExt2 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES} ${PCL_LIBRARIES})
 
 
 add_executable(projectCloud src/projectCloud.cpp src/common.h)
-target_link_libraries(projectCloud ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(projectCloud ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(colorLidar src/color_lidar_display.cpp src/common.h)
-target_link_libraries(colorLidar ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES})
+target_link_libraries(colorLidar ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES} ${PCL_LIBRARIES})
 
 
 

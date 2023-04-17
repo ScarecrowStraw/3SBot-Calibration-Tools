@@ -33,7 +33,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## Find system dependencies
-find_package(PCL REQUIRED COMPONENTS common features filters io segmentation surface)
+find_package(PCL 1.8 REQUIRED COMPONENTS common features filters io segmentation surface)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread)
 find_package(Eigen3 REQUIRED)
 
