@@ -19,10 +19,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 find_package(Ceres REQUIRED)
 
-find_package(PCL REQUIRED)
+find_package(PCL 1.8 REQUIRED)
 message(STATUS "***** PCL version: ${PCL_VERSION} *****")
 ####
 
@@ -43,12 +43,12 @@ catkin_package(
 
 
 add_executable(livox_scanRegistration source/laser_feature_extractor.cpp)
-target_link_libraries(livox_scanRegistration ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(livox_scanRegistration ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} -lopencv_core -lopencv_videoio -lopencv_highgui)
 
 add_executable(livox_laserMapping source/laser_mapping.cpp )
-target_link_libraries(livox_laserMapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} )
+target_link_libraries(livox_laserMapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} -lopencv_core -lopencv_videoio -lopencv_highgui)
 
 add_executable(read_camera source/read_camera.cpp)
-target_link_libraries(read_camera ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(read_camera ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} -lopencv_core -lopencv_videoio -lopencv_highgui)
 
 
