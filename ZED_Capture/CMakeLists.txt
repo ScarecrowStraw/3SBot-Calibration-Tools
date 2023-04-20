@@ -50,12 +50,13 @@ find_package(catkin REQUIRED COMPONENTS
   vision_msgs
   tf
   rosbag
+  image_transport
+  cv_bridge
 )
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES costmap_objects_layer
-  CATKIN_DEPENDS roscpp rospy std_msgs tf vision_msgs rosbag
+  CATKIN_DEPENDS roscpp rospy std_msgs tf vision_msgs rosbag image_transport cv_bridge
   DEPENDS
 )
 
@@ -162,8 +163,8 @@ install(TARGETS ${PROJECT_NAME}
 ##### Synchronization Example
 add_executable(${PROJECT_NAME}_sync_record "${PROJECT_SOURCE_DIR}/src/zed_record_node.cpp")
 set_target_properties(${PROJECT_NAME}_sync_record PROPERTIES PREFIX "")
-target_link_libraries(${PROJECT_NAME}_sync_record          
-    ${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}_sync_record    
+    ${catkin_LIBRARIES}      
     ${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
 )

@@ -9,7 +9,16 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <ros/ros.h>
 #include <rosbag/bag.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <rosbag/view.h>
+#include <sensor_msgs/Image.h>
+#include <std_msgs/Time.h>
+#include <std_msgs/Header.h>
+#include <sensor_msgs/Imu.h>
+#include <tf2/LinearMath/Quaternion.h>
 
 
 // ----> Functions
@@ -19,9 +28,15 @@ void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap);
 
 // ----> Global variables
 std::mutex imuMutex;
+std::mutex bagMutex;
 std::string imuTsStr;
 std::string imuAccelStr;
 std::string imuGyroStr;
+sensor_msgs::Imu imu_msg;
+cv_bridge::CvImage cvImage;
+
+// rosbag recoder
+rosbag::Bag bag_out;
 
 bool sensThreadStop=false;
 uint64_t mcu_sync_ts=0;
@@ -32,6 +47,10 @@ int main(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
+    ros::init(argc, argv, "zed_bag_record");
+
+    ros::start();
+
     //sl_oc::sensors::SensorCapture::resetSensorModule();
     //sl_oc::sensors::SensorCapture::resetVideoModule();
 
@@ -40,14 +59,12 @@ int main(int argc, char *argv[])
 
     // ----> Set the video parameters
     sl_oc::video::VideoParams params;
-    params.res = sl_oc::video::RESOLUTION::HD720;
+    params.res = sl_oc::video::RESOLUTION::HD1080;
     params.fps = sl_oc::video::FPS::FPS_30;
     params.verbose = verbose;
     // <---- Video parameters
 
-    // rosbag recoder
-    rosbag::Bag bag;
-    bag.open("zed_raw.bag", rosbag::bagmode::Write);
+    bag_out.open("zed_raw.bag", rosbag::bagmode::Write);
 
     // ----> Create a Video Capture object
     sl_oc::video::VideoCapture videoCap(params);
@@ -121,7 +138,7 @@ int main(int argc, char *argv[])
     float frame_fps=0;
 
     // Infinite grabbing loop
-    while (1)
+    while (ros::ok())
     {
         // ----> Get Video frame
         // Get last available frame
@@ -157,6 +174,18 @@ int main(int argc, char *argv[])
 
             // IMU info
             imuMutex.lock();
+            bagMutex.lock();
+
+            uint64_t nsecs = (frame.timestamp % 1000) * 1000 * 1000;
+            uint64_t secs = frame.timestamp / 1000;
+
+            // Bag file write
+            cvImage.image = frameBGR;
+            cvImage.encoding = sensor_msgs::image_encodings::RGB8;
+            cvImage.header.stamp = ros::Time::now();
+            // if (cvImage.header.stamp.toNSec() == 0) cvImage.header.stamp = ros::TIME_MIN;
+            bag_out.write("/camera/image_raw", cvImage.header.stamp, cvImage.toImageMsg());
+
             cv::putText( frameData, imuTsStr, cv::Point(10, 35),cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(241,240,236));
 
             // Timestamp offset info
@@ -183,7 +212,9 @@ int main(int argc, char *argv[])
             cv::putText( frameData, "Inertial sensor data:", cv::Point(display_resolution.width/2,20),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
             cv::putText( frameData, imuAccelStr, cv::Point(display_resolution.width/2+15,42),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
             cv::putText( frameData, imuGyroStr, cv::Point(display_resolution.width/2+15, 62),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
+
             imuMutex.unlock();
+            bagMutex.unlock();
 
             // Resize Image for display
             cv::resize(frameBGR, frameBGRDisplay, display_resolution);
@@ -204,9 +235,12 @@ int main(int argc, char *argv[])
                 sensThread.join();
                 break;
             }
+            bag_out.close();
         }
         // <---- Keyboard handling
     }
+
+    // ros::shutdown();s
 
     return EXIT_SUCCESS;
 }
@@ -242,6 +276,27 @@ void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap)
             accel << std::fixed << std::showpos << std::setprecision(4) << " * Accel: " << imuData.aX << " " << imuData.aY << " " << imuData.aZ << " [m/s^2]";
             gyro << std::fixed << std::showpos << std::setprecision(4) << " * Gyro: " << imuData.gX << " " << imuData.gY << " " << imuData.gZ << " [deg/s]";
             // <---- Data info to be displayed
+
+            bagMutex.lock();
+
+            uint64_t nsecs = (last_imu_ts % 1000) * 1000 * 1000;
+            uint64_t secs = last_imu_ts / 1000;
+
+            imu_msg.header.frame_id = "/stereo_imu";
+
+            imu_msg.header.stamp = ros::Time::now();
+            // if (imu_msg.header.stamp.toNSec() == 0) imu_msg.header.stamp = ros::TIME_MIN;
+
+            imu_msg.linear_acceleration.x = imuData.aX;
+            imu_msg.linear_acceleration.y = imuData.aY;
+            imu_msg.linear_acceleration.z = imuData.aZ;
+            imu_msg.angular_velocity.x = imuData.gX;
+            imu_msg.angular_velocity.y = imuData.gY;
+            imu_msg.angular_velocity.z = imuData.gZ;
+
+            bag_out.write("/imu/imu_raw", imu_msg.header.stamp, imu_msg);
+
+            bagMutex.unlock();
 
             // Mutex to not overwrite data while diplaying them
             imuMutex.lock();
