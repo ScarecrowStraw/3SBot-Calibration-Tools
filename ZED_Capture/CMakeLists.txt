@@ -47,7 +47,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  vision_msgs
   tf
   rosbag
   image_transport
@@ -56,7 +55,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs tf vision_msgs rosbag image_transport cv_bridge
+  CATKIN_DEPENDS roscpp rospy std_msgs tf rosbag image_transport cv_bridge
   DEPENDS
 )
 
