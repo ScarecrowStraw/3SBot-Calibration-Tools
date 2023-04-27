@@ -35,6 +35,8 @@ std::string imuGyroStr;
 sensor_msgs::Imu imu_msg;
 cv_bridge::CvImage cvImage;
 
+#define k_JPEG_COMPRESS     97
+
 // rosbag recoder
 rosbag::Bag bag_out;
 
@@ -137,6 +139,10 @@ int main(int argc, char *argv[])
 
     float frame_fps=0;
 
+    std::vector<int> encode_param;
+    encode_param.push_back(cv::IMWRITE_JPEG_QUALITY) ;
+    encode_param.push_back(k_JPEG_COMPRESS);
+
     // Infinite grabbing loop
     while (ros::ok())
     {
@@ -174,13 +180,16 @@ int main(int argc, char *argv[])
 
             // IMU info
             imuMutex.lock();
-            bagMutex.lock();
+//            bagMutex.lock();
 
             uint64_t nsecs = (frame.timestamp % 1000) * 1000 * 1000;
             uint64_t secs = frame.timestamp / 1000;
 
             // Bag file write
-            cvImage.image = frameBGR;
+            std::vector<uchar> buff;
+            cv::Mat m = frameBGR;
+            cv::imencode(".jpg",m,buff, encode_param);
+            cvImage.image = m;
             cvImage.encoding = sensor_msgs::image_encodings::RGB8;
             cvImage.header.stamp = ros::Time::now();
             // if (cvImage.header.stamp.toNSec() == 0) cvImage.header.stamp = ros::TIME_MIN;
@@ -214,7 +223,7 @@ int main(int argc, char *argv[])
             cv::putText( frameData, imuGyroStr, cv::Point(display_resolution.width/2+15, 62),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
 
             imuMutex.unlock();
-            bagMutex.unlock();
+//            bagMutex.unlock();
 
             // Resize Image for display
             cv::resize(frameBGR, frameBGRDisplay, display_resolution);
@@ -277,7 +286,7 @@ void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap)
             gyro << std::fixed << std::showpos << std::setprecision(4) << " * Gyro: " << imuData.gX << " " << imuData.gY << " " << imuData.gZ << " [deg/s]";
             // <---- Data info to be displayed
 
-            bagMutex.lock();
+//            bagMutex.lock();
 
             uint64_t nsecs = (last_imu_ts % 1000) * 1000 * 1000;
             uint64_t secs = last_imu_ts / 1000;
@@ -296,7 +305,7 @@ void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap)
 
             bag_out.write("/imu/imu_raw", imu_msg.header.stamp, imu_msg);
 
-            bagMutex.unlock();
+//            bagMutex.unlock();
 
             // Mutex to not overwrite data while diplaying them
             imuMutex.lock();
