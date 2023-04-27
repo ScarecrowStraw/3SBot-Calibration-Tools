@@ -61,6 +61,7 @@ catkin_package(
 )
 
 find_package(OpenCV 4 REQUIRED)
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
@@ -187,6 +188,7 @@ target_link_libraries(${PROJECT_NAME}_sync_record_image
     ${catkin_LIBRARIES}      
     ${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
+    Qt5::Widgets
 )
 
 install(TARGETS ${PROJECT_NAME}_sync_record_image
