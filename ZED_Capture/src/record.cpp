@@ -18,6 +18,8 @@
 #include <QDebug>
 
 #include <opencv2/opencv.hpp>
+
+#include <ros/ros.h>
 // <---- Includes
 
 // ----> Functions
@@ -77,6 +79,10 @@ int main(int argc, char *argv[])
     // ----> Silence unused warning
     (void)argc;
     (void)argv;
+
+    ros::init(argc, argv, "zed_image_record");
+
+    ros::start();
     // <---- Silence unused warning
 
 //    initializeFolder();
@@ -167,7 +173,7 @@ int main(int argc, char *argv[])
     float frame_fps=0;
 
     // Infinite grabbing loop
-    while (1)
+    while (ros::ok())
     {
         // ----> Get Video frame
         // Get last available frame

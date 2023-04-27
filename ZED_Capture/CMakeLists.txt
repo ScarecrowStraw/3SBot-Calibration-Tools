@@ -161,21 +161,41 @@ install(TARGETS ${PROJECT_NAME}
 
 
 ##### Synchronization Example
-add_executable(${PROJECT_NAME}_sync_record "${PROJECT_SOURCE_DIR}/src/zed_record_node.cpp")
-set_target_properties(${PROJECT_NAME}_sync_record PROPERTIES PREFIX "")
-target_link_libraries(${PROJECT_NAME}_sync_record    
+add_executable(${PROJECT_NAME}_sync_record_bag "${PROJECT_SOURCE_DIR}/src/zed_record_node.cpp")
+set_target_properties(${PROJECT_NAME}_sync_record_bag PROPERTIES PREFIX "")
+target_link_libraries(${PROJECT_NAME}_sync_record_bag    
     ${catkin_LIBRARIES}      
     ${PROJECT_NAME}
     ${OpenCV_LIBRARIES}
 )
 
-install(TARGETS ${PROJECT_NAME}_sync_record
+install(TARGETS ${PROJECT_NAME}_sync_record_bag
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-install(TARGETS ${PROJECT_NAME}_sync_record
+install(TARGETS ${PROJECT_NAME}_sync_record_bag
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
+
+add_executable(${PROJECT_NAME}_sync_record_image "${PROJECT_SOURCE_DIR}/src/record.cpp")
+set_target_properties(${PROJECT_NAME}_sync_record_image PROPERTIES PREFIX "")
+target_link_libraries(${PROJECT_NAME}_sync_record_image    
+    ${catkin_LIBRARIES}      
+    ${PROJECT_NAME}
+    ${OpenCV_LIBRARIES}
+)
+
+install(TARGETS ${PROJECT_NAME}_sync_record_image
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+## Mark libraries for installation
+## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
+install(TARGETS ${PROJECT_NAME}_sync_record_image
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
