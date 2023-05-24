@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   cv_bridge
   pcl_conversions
+  livox_ros_driver
   tf
 )
 

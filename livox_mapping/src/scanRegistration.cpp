@@ -46,8 +46,17 @@
 
 #include <sensor_msgs/PointCloud2.h>
 #include <eigen3/Eigen/Core>
+#include <livox_ros_driver/CustomMsg.h>
 
 typedef pcl::PointXYZI PointType;
+typedef pcl::PointCloud<PointType> PointCloudXYZI;
+
+PointCloudXYZI pl_full, pl_surf;
+
+int N_SCANS   = 6;
+int point_filter_num = 1;
+double blind = 0.01; 
+
 int scanID;
 
 int CloudFeatureFlag[32000];
@@ -144,10 +153,53 @@ void laserCloudHandler_temp(const sensor_msgs::PointCloud2ConstPtr& laserCloudMs
   pubLaserCloud_temp.publish(laserCloudOutMsg);
 
 }
-void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg)
+
+void CustomMsgHandler(const livox_ros_driver::CustomMsg::ConstPtr &msg, PointCloudXYZI &pcl_out)
+{
+  pl_surf.clear();
+  pl_full.clear();
+  double t1 = omp_get_wtime();
+  int plsize = msg->point_num;
+
+  pl_surf.reserve(plsize);
+  pl_full.resize(plsize);
+
+  uint valid_num = 0;  
+  
+  for(uint i=1; i<plsize; i++)
+  {
+    if((msg->points[i].line < N_SCANS) && ((msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00))
+    {
+      valid_num ++;
+      if (valid_num % point_filter_num == 0)
+      {
+        pl_full[i].x = msg->points[i].x;
+        pl_full[i].y = msg->points[i].y;
+        pl_full[i].z = msg->points[i].z;
+        pl_full[i].intensity = msg->points[i].reflectivity;
+        // pl_full[i].curvature = msg->points[i].offset_time / float(1000000); // use curvature as time of each laser points, curvature unit: ms
+
+        // if (i==0) pl_full[i].curvature = fabs(pl_full[i].curvature) < 1.0 ? pl_full[i].curvature : 0.0;
+        // else pl_full[i].curvature = fabs(pl_full[i].curvature - pl_full[i-1].curvature) < 1.0 ? pl_full[i].curvature : pl_full[i-1].curvature + 0.004166667f;
+
+        if((abs(pl_full[i].x - pl_full[i-1].x) > 1e-7) 
+            || (abs(pl_full[i].y - pl_full[i-1].y) > 1e-7)
+            || (abs(pl_full[i].z - pl_full[i-1].z) > 1e-7)
+            && (pl_full[i].x * pl_full[i].x + pl_full[i].y * pl_full[i].y + pl_full[i].z * pl_full[i].z > (blind * blind)))
+        {
+          pcl_out.push_back(pl_full[i]);
+        }
+      }
+    }
+  }
+}
+
+void laserCloudHandler(const livox_ros_driver::CustomMsg::ConstPtr &laserCloudMsg)
 {
   pcl::PointCloud<PointType> laserCloudIn;
-  pcl::fromROSMsg(*laserCloudMsg, laserCloudIn);
+  // pcl::fromROSMsg(*laserCloudMsg, laserCloudIn);
+
+  CustomMsgHandler(laserCloudMsg, laserCloudIn);
 
   int cloudSize = laserCloudIn.points.size();
 
@@ -533,8 +585,9 @@ int main(int argc, char** argv)
   // pubLaserCloud_for_hk = nh.advertise<sensor_msgs::PointCloud2>
   //                                ("/livox/lidar_temp", 2);
 
-  ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>
+  ros::Subscriber subLaserCloud = nh.subscribe<livox_ros_driver::CustomMsg>
                                   ("/livox/lidar", 100, laserCloudHandler);
+
   pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>
                                  ("/livox_cloud", 20);
 
